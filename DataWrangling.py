@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-
+from scipy.cluster.vq import kmeans2
+from sklearn.metrics import pairwise_distances_argmin_min
 
 def wrangle(filename):
     # Read Data and drop columns with more than thershold missing values
@@ -14,15 +15,15 @@ def wrangle(filename):
     # drop columns with Nan values greater than half
     df = df.dropna(thresh=len(df) - len(df) / 2, axis=1)
 
-    # Dropping columns with missing values greater than half
-    for column in df:
-        if any(df[column] == "" or pd.isnull(df[column])):
-            missing_values_count = df[column].value_counts()[""]
-            count_nan = len(df[column]) - df[column].count()
-
-            # drop columns with missing or nan values more than half
-            if missing_values_count > len(df) / 2 or count_nan > len(df) / 2:
-                del df[column]
+    # # Dropping columns with missing values greater than half
+    # for column in df:
+    #     if any(df[column] == "" or pd.isnull(df[column])):
+    #         missing_values_count = df[column].value_counts()[""]
+    #         count_nan = len(df[column]) - df[column].count()
+    #
+    #         # drop columns with missing or nan values more than half
+    #         if missing_values_count > len(df) / 2 or count_nan > len(df) / 2:
+    #             del df[column]
 
     # Filling missing values
     df.fillna(df.mean())
@@ -37,8 +38,21 @@ def wrangle(filename):
         df.head()
 
     # Pricipal Feature Analysis
-    # PFA(df)
-    return df
+    closest = PFA(df)
+    x = list(df)
+    variable = []
+    for i in closest:
+        variable.append(x[i])
+    return variable
 
 def PFA(df):
     corrMat = df.corr()
+    eigen_values, eigen_vectors = np.linalg.eig(corrMat)
+
+    # Using Kmeans2 for getting the centroids of clusters and an array which
+    centroids, labels = kmeans2(eigen_vectors[:,:7],7)
+
+    # Getting vectors closest to each cluster centroid
+    closest, _ = pairwise_distances_argmin_min(centroids, eigen_vectors[:,:7])
+    return closest
+
