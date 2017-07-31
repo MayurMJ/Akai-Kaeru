@@ -12,7 +12,7 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 app = Flask(__name__)
 
-app.config['UPLOAD_FOLDER'] = 'C:/Users/mayur/PycharmProjects/AkaiKaeru/uploads/'
+app.config['UPLOAD_FOLDER'] = '/Users/sravya/Desktop/Akai Kaeru/Akai-Kaeru/Data'
 app.config['ALLOWED_EXTENSIONS'] = set(['csv'])
 
 def allowed_file(filename):
