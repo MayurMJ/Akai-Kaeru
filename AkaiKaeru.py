@@ -1,6 +1,7 @@
 from flask import Flask
-from flask import render_template , request, redirect, url_for, send_from_directory
+from flask import render_template , request, redirect, url_for, send_from_directory, jsonify
 from DataWrangling import wrangle
+import json
 
 app = Flask(__name__)
 
@@ -12,7 +13,7 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 app = Flask(__name__)
 
-app.config['UPLOAD_FOLDER'] = '/Users/sravya/Desktop/Akai Kaeru/Akai-Kaeru/Data'
+app.config['UPLOAD_FOLDER'] = app.root_path+'/Data'
 app.config['ALLOWED_EXTENSIONS'] = set(['csv'])
 
 def allowed_file(filename):
@@ -25,14 +26,17 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/upload', methods=['POST'])
+@app.route('/upload', methods=['GET','POST'])
 def upload():
     file = request.files['file']
     if file and allowed_file(file.filename):
         filename = file.filename
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         print(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        print(wrangle(os.path.join(app.config['UPLOAD_FOLDER'], filename)))
+        topFeatures, groupedFeatures = wrangle(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        print(topFeatures)
+        return jsonify(topFeatures=topFeatures, groupedFeatures=groupedFeatures)
+
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
