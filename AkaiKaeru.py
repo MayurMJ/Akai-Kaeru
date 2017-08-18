@@ -2,6 +2,7 @@ from flask import Flask
 from flask import render_template , request, redirect, url_for, send_from_directory, jsonify
 from DataWrangling import wrangle
 import json
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -44,7 +45,21 @@ def uploaded_file(filename):
                                filename)
 
 
+def parseCsv():
+    l1 = set(open('C:/Users/mayur/PycharmProjects/AkaiKaeru/Data/Columns1.csv'))
+    l2 = set(open('C:/Users/mayur/PycharmProjects/AkaiKaeru/Data/Columns2.csv'))
+    open('C:/Users/mayur/PycharmProjects/AkaiKaeru/Data/Columns31.csv','w').writelines(l1 & l2)
 
+def mergeCsv():
+    df = pd.read_csv('C:/Users/mayur/PycharmProjects/AkaiKaeru/Data/BlankCount1.csv')
+    df2 = pd.read_csv('C:/Users/mayur/PycharmProjects/AkaiKaeru/Data/Columns31.csv')
+    df3 = pd.read_csv('C:/Users/mayur/PycharmProjects/AkaiKaeru/Data/BlankCount2.csv')
+    s1 = pd.merge(df,df2,how='inner', on='Institution Name')
+    s2 = pd.merge(df2,df3,how='inner', on='Institution Name')
+    s1.to_csv('C:/Users/mayur/PycharmProjects/AkaiKaeru/Data/MergedBlankCount1.csv')
+    s2.to_csv('C:/Users/mayur/PycharmProjects/AkaiKaeru/Data/MergedBlankCount2.csv')
 
 if __name__ == '__main__':
+    #parseCsv()
+    #mergeCsv()
     app.run()

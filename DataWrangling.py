@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.cluster import KMeans
 from scipy.cluster.vq import kmeans2
 from sklearn.metrics import pairwise_distances_argmin_min
 
@@ -18,11 +19,44 @@ def wrangle(filename):
 
     # drop columns with Nan values greater than half
     df = df.dropna(thresh=len(df) - len(df) / 2, axis=1)
+    max_iter = 5
 
     # Filling missing values
-    df.fillna(df.mean())
+    #df.fillna(df.mean())
     # df.fillna(df.ffill())     # Forward Fill
     # df.fillna(bfill())	   # BackwardFill
+
+    # Initialize missing values to their column means
+    missing = ~np.isfinite(df)
+    mu = np.nanmean(df, 0, keepdims=1)
+    n_clusters = 5
+    X_hat = np.where(missing, mu, df)
+
+    for i in range(max_iter):
+        if i > 0:
+            # initialize KMeans with the previous set of centroids. this is much
+            # faster and makes it easier to check convergence (since labels
+            # won't be permuted on every iteration), but might be more prone to
+            # getting stuck in local minima.
+            cls = KMeans(n_clusters, init=prev_centroids)
+        else:
+            # do multiple random initializations in parallel
+            cls = KMeans(n_clusters, n_jobs=-1)
+
+        # perform clustering on the filled-in data
+        labels = cls.fit_predict(X_hat)
+        centroids = cls.cluster_centers_
+
+        # fill in the missing values based on their cluster centroids
+        X_hat[missing] = centroids[labels][missing]
+
+        # when the labels have stopped changing then we have converged
+        if i > 0 and np.all(labels == prev_labels):
+            break
+
+        prev_labels = labels
+        prev_centroids = cls.cluster_centers_
+        df = X_hat
 
     # Converting categorical to numeric values (Label Encoding)
     dtypes = df.select_dtypes(exclude=numerics).columns
