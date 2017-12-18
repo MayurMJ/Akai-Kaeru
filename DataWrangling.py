@@ -7,7 +7,7 @@ from sklearn.metrics import pairwise_distances_argmin_min
 
 def wrangle(filename):
     # Read Data and drop columns with more than thershold missing values
-    df = pd.read_csv(filename)
+    df = pd.read_csv(filename, low_memory=False)
     numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
     dtypes = df.select_dtypes(exclude=numerics).columns
     for column in dtypes:
@@ -21,16 +21,24 @@ def wrangle(filename):
     df = df.dropna(thresh=len(df) - len(df) / 2, axis=1)
     max_iter = 5
 
+    # Converting categorical to numeric values (Label Encoding)
+    dtypes = df.select_dtypes(exclude=numerics).columns
+    for column in dtypes:
+        df[column] = df[column].astype('category')
+        df[column] = df[column].cat.codes
+        df.head()
+
     # Filling missing values
     #df.fillna(df.mean())
     # df.fillna(df.ffill())     # Forward Fill
     # df.fillna(bfill())	   # BackwardFill
 
     # Initialize missing values to their column means
-    missing = ~np.isfinite(df)
+    missing = df.isnull()
     mu = np.nanmean(df, 0, keepdims=1)
     n_clusters = 5
     X_hat = np.where(missing, mu, df)
+    df_cols = list(df)
 
     for i in range(max_iter):
         if i > 0:
@@ -56,14 +64,9 @@ def wrangle(filename):
 
         prev_labels = labels
         prev_centroids = cls.cluster_centers_
-        df = X_hat
+        #df = X_hat
 
-    # Converting categorical to numeric values (Label Encoding)
-    dtypes = df.select_dtypes(exclude=numerics).columns
-    for column in dtypes:
-        df[column] = df[column].astype('category')
-        df[column] = df[column].cat.codes
-        df.head()
+        df = pd.DataFrame(data=X_hat[1:,0:], columns=np.asarray(df_cols))
 
     # Pricipal Feature Analysis
     closest, clusterVectors = PFA(df)
